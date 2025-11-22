@@ -1,28 +1,106 @@
 # TgEntity
 
-TODO: Delete this and the text below, and describe your gem
-
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/tg_entity`. To experiment with that code, run `bin/console` for an interactive prompt.
+Ruby gem for converting Telegram message entities between HTML and Markdown formats. Supports all Telegram MessageEntity types with UTF-16 offset/length handling.
 
 ## Installation
-
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
 
 Install the gem and add to the application's Gemfile by executing:
 
 ```bash
-bundle add UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+bundle add tg_entity
 ```
 
 If bundler is not being used to manage dependencies, install the gem by executing:
 
 ```bash
-gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+gem install tg_entity
 ```
 
 ## Usage
 
-TODO: Write usage instructions here
+### Converting from Markdown to Entities
+
+```ruby
+require 'tg_entity'
+
+entities = TgEntity::Entities.from_markdown('*bold* _italic_ `code`')
+# => #<TgEntity::Entities:0x...>
+# entities.message => "bold italic code"
+# entities.entities => [{"type"=>"bold", "offset"=>0, "length"=>4}, ...]
+```
+
+### Converting from HTML to Entities
+
+```ruby
+entities = TgEntity::Entities.from_html('<b>bold</b> <i>italic</i>')
+# => #<TgEntity::Entities:0x...>
+```
+
+### Converting Entities to HTML
+
+```ruby
+entities = TgEntity::Entities.new('Hello', [
+  {'type' => 'bold', 'offset' => 0, 'length' => 5}
+])
+html = entities.to_html
+# => "<b>Hello</b>"
+
+# With Telegram-specific tags
+html = entities.to_html(allow_telegram_tags: true)
+# => "<b>Hello</b>"
+```
+
+## Supported Entity Types
+
+The gem supports all Telegram MessageEntity types:
+
+### Text Formatting
+- **`bold`** - Bold text (`<b>`)
+- **`italic`** - Italic text (`<i>`)
+- **`underline`** - Underlined text (`<u>`)
+- **`strike`** - Strikethrough text (`<s>`)
+- **`code`** - Inline code (`<code>`)
+- **`pre`** - Code block (`<pre>`) with optional `language` field
+- **`spoiler`** - Spoiler text (`<tg-spoiler>` or `<span class="tg-spoiler">`)
+
+### Links and References
+- **`mention`** - Username mention (@username) - converted to `<a href="https://t.me/username">`
+- **`mention_name`** - User mention by ID - requires `user.id` field, converted to `<a href="tg://user?id=...">`
+- **`hashtag`** - Hashtag (#hashtag)
+- **`cashtag`** - Cashtag ($USD)
+- **`bot_command`** - Bot command (/start)
+- **`url`** - URL (automatically detected)
+- **`email`** - Email address (automatically detected)
+- **`phone`** - Phone number (automatically detected)
+- **`text_url`** - Text link - requires `url` field, converted to `<a href="...">`
+
+### Media and Special
+- **`custom_emoji`** - Custom emoji - requires `custom_emoji_id` field
+- **`media_timestamp`** - Media timestamp - requires `media_timestamp` field (integer)
+- **`bank_card`** - Bank card number
+
+### Block Quotes
+- **`blockquote`** - Block quote (`<blockquote>`)
+- **`expandable_blockquote`** - Expandable block quote (`<blockquote expandable>` or `<blockquote class="expandable">`)
+
+### Entity Structure
+
+Each entity is a hash with the following structure:
+
+```ruby
+{
+  'type' => 'bold',           # Entity type (required)
+  'offset' => 0,               # UTF-16 offset (required)
+  'length' => 4,               # UTF-16 length (required)
+  'url' => '...',             # For text_url type
+  'user' => {'id' => 123},    # For mention_name type
+  'custom_emoji_id' => 12345, # For custom_emoji type
+  'media_timestamp' => 30,    # For media_timestamp type
+  'language' => 'ruby'         # For pre type
+}
+```
+
+**Note:** All offsets and lengths are in UTF-16 code units, not bytes or characters. The gem handles UTF-16 encoding automatically.
 
 ## Development
 
