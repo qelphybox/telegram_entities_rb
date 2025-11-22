@@ -2,7 +2,7 @@
 
 source "https://rubygems.org"
 
-# Specify your gem's dependencies in tg_entity.gemspec
+# Specify your gem's dependencies in telegram_entities.gemspec
 gemspec
 
 gem "irb"

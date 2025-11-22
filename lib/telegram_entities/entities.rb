@@ -2,7 +2,7 @@
 
 require 'nokogiri'
 
-module TgEntity
+module TelegramEntities
   # Class that represents a message + set of Telegram entities.
   class Entities
     attr_accessor :message, :entities

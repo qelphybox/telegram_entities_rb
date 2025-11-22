@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require_relative "lib/tg_entity/version"
+require_relative "lib/telegram_entities/version"
 
 Gem::Specification.new do |spec|
-  spec.name = "tg_entity"
-  spec.version = TgEntity::VERSION
+  spec.name = "telegram_entities"
+  spec.version = TelegramEntities::VERSION
   spec.authors = ["Kirill Bobykin"]
   spec.email = ["qelphybox@gmail.com"]
 

@@ -2,8 +2,8 @@
 
 require "test_helper"
 
-class TestTgEntity < Minitest::Test
+class TestTelegramEntities < Minitest::Test
   def test_that_it_has_a_version_number
-    refute_nil ::TgEntity::VERSION
+    refute_nil ::TelegramEntities::VERSION
   end
 end

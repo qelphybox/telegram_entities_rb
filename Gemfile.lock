@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    tg_entity (0.1.0)
+    telegram_entities (0.1.0)
       nokogiri (~> 1.0)
 
 GEM
@@ -108,7 +108,7 @@ DEPENDENCIES
   minitest (~> 5.16)
   rake (~> 13.0)
   standard (~> 1.3)
-  tg_entity!
+  telegram_entities!
 
 BUNDLED WITH
    2.7.1

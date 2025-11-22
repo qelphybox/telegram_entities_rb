@@ -7,13 +7,13 @@ Ruby gem for converting Telegram message entities between HTML and Markdown form
 Install the gem and add to the application's Gemfile by executing:
 
 ```bash
-bundle add tg_entity
+bundle add telegram_entities
 ```
 
 If bundler is not being used to manage dependencies, install the gem by executing:
 
 ```bash
-gem install tg_entity
+gem install telegram_entities
 ```
 
 ## Usage
@@ -21,10 +21,10 @@ gem install tg_entity
 ### Converting from Markdown to Entities
 
 ```ruby
-require 'tg_entity'
+require 'telegram_entities'
 
-entities = TgEntity::Entities.from_markdown('*bold* _italic_ `code`')
-# => #<TgEntity::Entities:0x...>
+entities = TelegramEntities.from_markdown('*bold* _italic_ `code`')
+# => #<TelegramEntities::Entities:0x...>
 # entities.message => "bold italic code"
 # entities.entities => [{"type"=>"bold", "offset"=>0, "length"=>4}, ...]
 ```
@@ -32,22 +32,22 @@ entities = TgEntity::Entities.from_markdown('*bold* _italic_ `code`')
 ### Converting from HTML to Entities
 
 ```ruby
-entities = TgEntity::Entities.from_html('<b>bold</b> <i>italic</i>')
-# => #<TgEntity::Entities:0x...>
+entities = TelegramEntities.from_html('<b>bold</b> <i>italic</i>')
+# => #<TelegramEntities::Entities:0x...>
 ```
 
 ### Converting Entities to HTML
 
 ```ruby
-entities = TgEntity::Entities.new('Hello', [
+entities = TelegramEntities.new('Hello', [
   {'type' => 'bold', 'offset' => 0, 'length' => 5}
 ])
 html = entities.to_html
-# => "<b>Hello</b>"
+# => "<strong>Hello</strong>"
 
 # With Telegram-specific tags
 html = entities.to_html(allow_telegram_tags: true)
-# => "<b>Hello</b>"
+# => "<strong>Hello</strong>"
 ```
 
 ## Supported Entity Types
@@ -110,7 +110,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/tg_entity. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/[USERNAME]/tg_entity/blob/master/CODE_OF_CONDUCT.md).
+Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/telegram_entities. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/[USERNAME]/telegram_entities/blob/master/CODE_OF_CONDUCT.md).
 
 ## License
 
@@ -118,4 +118,4 @@ The gem is available as open source under the terms of the [MIT License](https:/
 
 ## Code of Conduct
 
-Everyone interacting in the TgEntity project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/tg_entity/blob/master/CODE_OF_CONDUCT.md).
+Everyone interacting in the TelegramEntities project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/telegram_entities/blob/master/CODE_OF_CONDUCT.md).

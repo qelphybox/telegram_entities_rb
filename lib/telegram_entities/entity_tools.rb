@@ -2,7 +2,7 @@
 
 require 'cgi'
 
-module TgEntity
+module TelegramEntities
   # Telegram UTF-16 styled text entity tools.
   module EntityTools
     # Get length of string in UTF-16 code points.
