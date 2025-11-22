@@ -237,7 +237,7 @@ module TelegramEntities
       html = html.gsub(/<br(\s*)?\/?>/i, "\n")
       # Use HTML parser to properly handle boolean attributes like 'expandable'
       doc = Nokogiri::HTML::DocumentFragment.parse("<body>#{html.strip}</body>")
-      message = String.new("")
+      message = +""
       entities = []
       body = doc.at_css("body")
       parse_node(body, 0, message, entities)
@@ -342,8 +342,6 @@ module TelegramEntities
       final += EntityTools.html_escape(EntityTools.mb_substr(@message, pos))
       final.gsub("\n", "<br>")
     end
-
-    private
 
     # Parse HTML node recursively
     def self.parse_node(node, offset, message, entities)
@@ -458,5 +456,7 @@ module TelegramEntities
         {"type" => "text_url", "url" => href}
       end
     end
+
+    private_class_method :parse_node, :handle_link
   end
 end
