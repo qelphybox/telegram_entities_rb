@@ -194,7 +194,7 @@ module TgEntity
                      when '_' then { 'type' => 'italic' }
                      when '__' then { 'type' => 'underline' }
                      when '`' then { 'type' => 'code' }
-                     when '~' then { 'type' => 'strikethrough' }
+                     when '~' then { 'type' => 'strike' }
                      when '||' then { 'type' => 'spoiler' }
                      else raise "Unknown char #{char} @ pos #{offset}!"
                      end
@@ -265,10 +265,10 @@ module TgEntity
                                 else
                                   '<pre>'
                                 end
-                              when 'text_link' then "<a href=\"#{EntityTools.html_escape(entity['url'])}\">"
-                              when 'strikethrough' then '<s>'
+                              when 'text_url' then "<a href=\"#{EntityTools.html_escape(entity['url'])}\">"
+                              when 'strike' then '<s>'
                               when 'underline' then '<u>'
-                              when 'block_quote' then '<blockquote>'
+                              when 'blockquote' then '<blockquote>'
                               when 'url'
                                 url = EntityTools.html_escape(EntityTools.mb_substr(@message, offset, length))
                                 "<a href=\"#{url}\">"
@@ -285,7 +285,7 @@ module TgEntity
                                 allow_telegram_tags ? '<tg-spoiler>' : '<span class="tg-spoiler">'
                               when 'custom_emoji'
                                 allow_telegram_tags ? "<tg-emoji emoji-id=\"#{entity['custom_emoji_id']}\">" : ''
-                              when 'text_mention'
+                              when 'mention_name'
                                 allow_telegram_tags ? "<a href=\"tg://user?id=#{entity['user']['id']}\">" : ''
                               when 'hashtag'
                                 allow_telegram_tags ? '<tg-hashtag>' : '<span class="tg-hashtag">'
@@ -300,9 +300,9 @@ module TgEntity
                                 else
                                   '<span class="tg-media-timestamp">'
                                 end
-                              when 'bank_card_number'
+                              when 'bank_card'
                                 allow_telegram_tags ? '<tg-bank-card-number>' : '<span class="tg-bank-card-number">'
-                              when 'expandable_block_quote'
+                              when 'expandable_blockquote'
                                 allow_telegram_tags ? '<blockquote expandable>' : '<blockquote class="expandable">'
                               else ''
                               end
@@ -314,19 +314,19 @@ module TgEntity
                                   when 'italic' then '</i>'
                                   when 'code' then '</code>'
                                   when 'pre' then '</pre>'
-                                  when 'text_link', 'url', 'email', 'mention', 'phone' then '</a>'
-                                  when 'strikethrough' then '</s>'
+                                  when 'text_url', 'url', 'email', 'mention', 'phone' then '</a>'
+                                  when 'strike' then '</s>'
                                   when 'underline' then '</u>'
-                                  when 'block_quote' then '</blockquote>'
+                                  when 'blockquote' then '</blockquote>'
                                   when 'spoiler' then allow_telegram_tags ? '</tg-spoiler>' : '</span>'
                                   when 'custom_emoji' then allow_telegram_tags ? '</tg-emoji>' : ''
-                                  when 'text_mention' then allow_telegram_tags ? '</a>' : ''
+                                  when 'mention_name' then allow_telegram_tags ? '</a>' : ''
                                   when 'hashtag' then allow_telegram_tags ? '</tg-hashtag>' : '</span>'
                                   when 'cashtag' then allow_telegram_tags ? '</tg-cashtag>' : '</span>'
                                   when 'bot_command' then allow_telegram_tags ? '</tg-bot-command>' : '</span>'
                                   when 'media_timestamp' then allow_telegram_tags ? '</tg-media-timestamp>' : '</span>'
-                                  when 'bank_card_number' then allow_telegram_tags ? '</tg-bank-card-number>' : '</span>'
-                                  when 'expandable_block_quote' then '</blockquote>'
+                                  when 'bank_card' then allow_telegram_tags ? '</tg-bank-card-number>' : '</span>'
+                                  when 'expandable_blockquote' then '</blockquote>'
                                   else ''
                                   end + insertions[end_offset]
       end
@@ -359,7 +359,7 @@ module TgEntity
       end
 
       entity = case node.name
-               when 's', 'strike', 'del' then { 'type' => 'strikethrough' }
+               when 's', 'strike', 'del' then { 'type' => 'strike' }
                when 'u' then { 'type' => 'underline' }
                when 'b', 'strong' then { 'type' => 'bold' }
                when 'i', 'em' then { 'type' => 'italic' }
@@ -389,7 +389,7 @@ module TgEntity
                      { 'type' => 'media_timestamp' }
                    end
                  when 'tg-bank-card-number'
-                   { 'type' => 'bank_card_number' }
+                   { 'type' => 'bank_card' }
                  else
                    nil
                  end
@@ -411,13 +411,13 @@ module TgEntity
                    { 'type' => 'media_timestamp' }
                  end
                when 'tg-bank-card-number'
-                 { 'type' => 'bank_card_number' }
+                 { 'type' => 'bank_card' }
                when 'blockquote'
                  # Check for expandable attribute or class
                  if !node['expandable'].nil? || node['class'] == 'expandable'
-                   { 'type' => 'expandable_block_quote' }
+                   { 'type' => 'expandable_blockquote' }
                  else
-                   { 'type' => 'block_quote' }
+                   { 'type' => 'blockquote' }
                  end
                when 'a'
                  handle_link(node['href'] || '')
@@ -454,12 +454,12 @@ module TgEntity
     def self.handle_link(href)
       if (match = href.match(/^mention:(.+)/)) || (match = href.match(/^tg:\/\/user\?id=(.+)/))
         user_id = match[1].to_i
-        { 'type' => 'text_mention', 'user' => { 'id' => user_id } }
+        { 'type' => 'mention_name', 'user' => { 'id' => user_id } }
       elsif (match = href.match(/^emoji:(\d+)$/)) || (match = href.match(/^tg:\/\/emoji\?id=(.+)/))
         emoji_id = match[1].to_i
         { 'type' => 'custom_emoji', 'custom_emoji_id' => emoji_id }
       else
-        { 'type' => 'text_link', 'url' => href }
+        { 'type' => 'text_url', 'url' => href }
       end
     end
   end

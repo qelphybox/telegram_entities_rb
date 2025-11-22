@@ -27,11 +27,11 @@ class TestEntities < Minitest::Test
     assert_equal 'underline', entities.entities[0]['type']
   end
 
-  def test_from_markdown_strikethrough
+  def test_from_markdown_strike
     entities = TgEntity::Entities.from_markdown('~test~')
     assert_equal 'test', entities.message
     assert_equal 1, entities.entities.length
-    assert_equal 'strikethrough', entities.entities[0]['type']
+    assert_equal 'strike', entities.entities[0]['type']
   end
 
   def test_from_markdown_code
@@ -69,7 +69,7 @@ class TestEntities < Minitest::Test
     entities = TgEntity::Entities.from_markdown('[text](https://example.com)')
     assert_equal 'text', entities.message
     assert_equal 1, entities.entities.length
-    assert_equal 'text_link', entities.entities[0]['type']
+    assert_equal 'text_url', entities.entities[0]['type']
     assert_equal 'https://example.com', entities.entities[0]['url']
   end
 
@@ -118,11 +118,11 @@ class TestEntities < Minitest::Test
     assert_equal 'underline', entities.entities[0]['type']
   end
 
-  def test_from_html_strikethrough
+  def test_from_html_strike
     entities = TgEntity::Entities.from_html('<s>test</s>')
     assert_equal 'test', entities.message
     assert_equal 1, entities.entities.length
-    assert_equal 'strikethrough', entities.entities[0]['type']
+    assert_equal 'strike', entities.entities[0]['type']
   end
 
   def test_from_html_code
@@ -144,7 +144,7 @@ class TestEntities < Minitest::Test
     entities = TgEntity::Entities.from_html('<a href="https://example.com">test</a>')
     assert_equal 'test', entities.message
     assert_equal 1, entities.entities.length
-    assert_equal 'text_link', entities.entities[0]['type']
+    assert_equal 'text_url', entities.entities[0]['type']
     assert_equal 'https://example.com', entities.entities[0]['url']
   end
 
@@ -173,11 +173,11 @@ class TestEntities < Minitest::Test
     assert_equal 12345, entities.entities[0]['custom_emoji_id']
   end
 
-  def test_from_html_text_mention
+  def test_from_html_mention_name
     entities = TgEntity::Entities.from_html('<a href="tg://user?id=12345">test</a>')
     assert_equal 'test', entities.message
     assert_equal 1, entities.entities.length
-    assert_equal 'text_mention', entities.entities[0]['type']
+    assert_equal 'mention_name', entities.entities[0]['type']
     assert_equal 12345, entities.entities[0]['user']['id']
   end
 
@@ -209,8 +209,8 @@ class TestEntities < Minitest::Test
     assert_equal '<pre language="php">test</pre>', entities.to_html
   end
 
-  def test_to_html_text_link
-    entities = TgEntity::Entities.new('test', [{'type' => 'text_link', 'offset' => 0, 'length' => 4, 'url' => 'https://example.com'}])
+  def test_to_html_text_url
+    entities = TgEntity::Entities.new('test', [{'type' => 'text_url', 'offset' => 0, 'length' => 4, 'url' => 'https://example.com'}])
     assert_equal '<a href="https://example.com">test</a>', entities.to_html
   end
 
@@ -265,14 +265,14 @@ class TestEntities < Minitest::Test
     assert_equal '<tg-media-timestamp timestamp="30">0:30</tg-media-timestamp>', entities.to_html(true)
   end
 
-  def test_to_html_bank_card_number
-    entities = TgEntity::Entities.new('1234 5678 9012 3456', [{'type' => 'bank_card_number', 'offset' => 0, 'length' => 19}])
+  def test_to_html_bank_card
+    entities = TgEntity::Entities.new('1234 5678 9012 3456', [{'type' => 'bank_card', 'offset' => 0, 'length' => 19}])
     assert_equal '<span class="tg-bank-card-number">1234 5678 9012 3456</span>', entities.to_html
     assert_equal '<tg-bank-card-number>1234 5678 9012 3456</tg-bank-card-number>', entities.to_html(true)
   end
 
-  def test_to_html_expandable_block_quote
-    entities = TgEntity::Entities.new('quote', [{'type' => 'expandable_block_quote', 'offset' => 0, 'length' => 5}])
+  def test_to_html_expandable_blockquote
+    entities = TgEntity::Entities.new('quote', [{'type' => 'expandable_blockquote', 'offset' => 0, 'length' => 5}])
     assert_equal '<blockquote class="expandable">quote</blockquote>', entities.to_html
     assert_equal '<blockquote expandable>quote</blockquote>', entities.to_html(true)
   end
@@ -335,32 +335,32 @@ class TestEntities < Minitest::Test
     assert_equal 30, entities.entities[0]['media_timestamp']
   end
 
-  def test_from_html_bank_card_number
+  def test_from_html_bank_card
     entities = TgEntity::Entities.from_html('<tg-bank-card-number>1234 5678 9012 3456</tg-bank-card-number>')
     assert_equal '1234 5678 9012 3456', entities.message
     assert_equal 1, entities.entities.length
-    assert_equal 'bank_card_number', entities.entities[0]['type']
+    assert_equal 'bank_card', entities.entities[0]['type']
   end
 
-  def test_from_html_bank_card_number_span
+  def test_from_html_bank_card_span
     entities = TgEntity::Entities.from_html('<span class="tg-bank-card-number">1234 5678 9012 3456</span>')
     assert_equal '1234 5678 9012 3456', entities.message
     assert_equal 1, entities.entities.length
-    assert_equal 'bank_card_number', entities.entities[0]['type']
+    assert_equal 'bank_card', entities.entities[0]['type']
   end
 
-  def test_from_html_expandable_block_quote
+  def test_from_html_expandable_blockquote
     entities = TgEntity::Entities.from_html('<blockquote expandable>quote</blockquote>')
     assert_equal 'quote', entities.message
     assert_equal 1, entities.entities.length
-    assert_equal 'expandable_block_quote', entities.entities[0]['type']
+    assert_equal 'expandable_blockquote', entities.entities[0]['type']
   end
 
-  def test_from_html_expandable_block_quote_class
+  def test_from_html_expandable_blockquote_class
     entities = TgEntity::Entities.from_html('<blockquote class="expandable">quote</blockquote>')
     assert_equal 'quote', entities.message
     assert_equal 1, entities.entities.length
-    assert_equal 'expandable_block_quote', entities.entities[0]['type']
+    assert_equal 'expandable_blockquote', entities.entities[0]['type']
   end
 
   def test_utf16_emoji
