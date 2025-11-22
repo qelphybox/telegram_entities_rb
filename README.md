@@ -10,14 +10,6 @@ Ruby gem for converting Telegram message entities between HTML and Markdown form
 - [MessageEntity Types](https://core.telegram.org/type/MessageEntity) - Complete schema of all entity types
 - [Styled Text with Message Entities](https://core.telegram.org/api/entities) - How Telegram styles text using entities
 
-## Features
-
-✨ **Full Telegram Support** - All MessageEntity types supported  
-🔀 **Bidirectional Conversion** - Convert between HTML, Markdown, and Telegram entities  
-🌐 **UTF-16 Handling** - Automatic UTF-16 offset/length calculation  
-📦 **Zero Dependencies** - Only requires Nokogiri for HTML parsing  
-🚀 **Easy to Use** - Simple, intuitive API
-
 ## Installation
 
 Install the gem and add to the application's Gemfile by executing:
@@ -91,6 +83,32 @@ puts entities.entities
 #   {"type"=>"text_url", "offset"=>12, "length"=>4, "url"=>"https://example.com"}
 # ]
 ```
+
+### Converting from TDLib formattedText to Entities
+
+Convert TDLib formattedText (from [tdlib-ruby](https://github.com/southbridgeio/tdlib-ruby)) to TelegramEntities:
+
+```ruby
+require 'telegram_entities'
+
+# Get formattedText from TDLib
+puts tdlib_formatted_text.inspect
+# => #<TD::Types::FormattedText text="" entities=[]>
+
+# Convert to TelegramEntities
+entities = TelegramEntities.from_tdlib_formatted_text(tdlib_formatted_text.to_h)
+
+puts entities.message
+# => "text content"
+
+puts entities.entities
+# => [
+#   {"type"=>"bold", "offset"=>0, "length"=>4},
+#   {"type"=>"text_url", "offset"=>10, "length"=>5, "url"=>"https://example.com"}
+# ]
+```
+
+The method supports all TDLib text entity types and automatically converts them to TelegramEntities format.
 
 ### Converting Entities to HTML
 
