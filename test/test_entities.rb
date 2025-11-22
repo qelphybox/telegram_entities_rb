@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "json"
 
 class TestEntities < Minitest::Test
   def test_from_markdown_bold
@@ -319,5 +320,12 @@ class TestEntities < Minitest::Test
     markdown = entities.to_markdown
     entities2 = TgEntity::Entities.from_markdown(markdown)
     assert_equal entities.message, entities2.message
+  end
+
+  def test_real_example
+    input_data = JSON.parse(File.read("#{__dir__}/fixtures/example_1/data.json"))
+    expected_html = File.read("#{__dir__}/fixtures/example_1/message.html")
+    entities = TgEntity::Entities.new(input_data[0], input_data[1])
+    assert_equal expected_html, entities.to_html
   end
 end
