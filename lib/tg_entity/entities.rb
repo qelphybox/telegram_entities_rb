@@ -235,7 +235,8 @@ module TgEntity
     # @return [Entities] Object containing message and entities
     def self.from_html(html)
       html = html.gsub(/<br(\s*)?\/?>/i, "\n")
-      doc = Nokogiri::XML::Document.parse("<body>#{html.strip}</body>")
+      # Use HTML parser to properly handle boolean attributes like 'expandable'
+      doc = Nokogiri::HTML::DocumentFragment.parse("<body>#{html.strip}</body>")
       message = String.new('')
       entities = []
       body = doc.at_css('body')
@@ -286,6 +287,23 @@ module TgEntity
                                 allow_telegram_tags ? "<tg-emoji emoji-id=\"#{entity['custom_emoji_id']}\">" : ''
                               when 'text_mention'
                                 allow_telegram_tags ? "<a href=\"tg://user?id=#{entity['user']['id']}\">" : ''
+                              when 'hashtag'
+                                allow_telegram_tags ? '<tg-hashtag>' : '<span class="tg-hashtag">'
+                              when 'cashtag'
+                                allow_telegram_tags ? '<tg-cashtag>' : '<span class="tg-cashtag">'
+                              when 'bot_command'
+                                allow_telegram_tags ? '<tg-bot-command>' : '<span class="tg-bot-command">'
+                              when 'media_timestamp'
+                                media_timestamp = entity['media_timestamp']
+                                if allow_telegram_tags && media_timestamp
+                                  "<tg-media-timestamp timestamp=\"#{EntityTools.html_escape(media_timestamp.to_s)}\">"
+                                else
+                                  '<span class="tg-media-timestamp">'
+                                end
+                              when 'bank_card_number'
+                                allow_telegram_tags ? '<tg-bank-card-number>' : '<span class="tg-bank-card-number">'
+                              when 'expandable_block_quote'
+                                allow_telegram_tags ? '<blockquote expandable>' : '<blockquote class="expandable">'
                               else ''
                               end
 
@@ -303,6 +321,12 @@ module TgEntity
                                   when 'spoiler' then allow_telegram_tags ? '</tg-spoiler>' : '</span>'
                                   when 'custom_emoji' then allow_telegram_tags ? '</tg-emoji>' : ''
                                   when 'text_mention' then allow_telegram_tags ? '</a>' : ''
+                                  when 'hashtag' then allow_telegram_tags ? '</tg-hashtag>' : '</span>'
+                                  when 'cashtag' then allow_telegram_tags ? '</tg-cashtag>' : '</span>'
+                                  when 'bot_command' then allow_telegram_tags ? '</tg-bot-command>' : '</span>'
+                                  when 'media_timestamp' then allow_telegram_tags ? '</tg-media-timestamp>' : '</span>'
+                                  when 'bank_card_number' then allow_telegram_tags ? '</tg-bank-card-number>' : '</span>'
+                                  when 'expandable_block_quote' then '</blockquote>'
                                   else ''
                                   end + insertions[end_offset]
       end
@@ -317,67 +341,6 @@ module TgEntity
       end
       final += EntityTools.html_escape(EntityTools.mb_substr(@message, pos))
       final.gsub("\n", '<br>')
-    end
-
-    # Convert a message and a set of entities to MarkdownV2.
-    #
-    # @return [String] Markdown string
-    def to_markdown
-      # Sort entities by offset, then by length (longer first for nested)
-      sorted_entities = @entities.sort_by { |e| [e['offset'], -e['length']] }
-      insertions = {}
-
-      sorted_entities.each do |entity|
-        offset = entity['offset']
-        length = entity['length']
-        insertions[offset] ||= ''
-        insertions[offset + length] ||= ''
-
-        case entity['type']
-        when 'bold'
-          insertions[offset] += '*'
-          insertions[offset + length] = '*' + insertions[offset + length]
-        when 'italic'
-          insertions[offset] += '_'
-          insertions[offset + length] = '_' + insertions[offset + length]
-        when 'underline'
-          insertions[offset] += '__'
-          insertions[offset + length] = '__' + insertions[offset + length]
-        when 'strikethrough'
-          insertions[offset] += '~'
-          insertions[offset + length] = '~' + insertions[offset + length]
-        when 'code'
-          insertions[offset] += '`'
-          insertions[offset + length] = '`' + insertions[offset + length]
-        when 'pre', 'pre_code'
-          language = entity['language'] || ''
-          insertions[offset] = "```#{language}\n" + insertions[offset]
-          insertions[offset + length] = "\n```" + insertions[offset + length]
-        when 'spoiler'
-          insertions[offset] += '||'
-          insertions[offset + length] = '||' + insertions[offset + length]
-        when 'text_link'
-          url = EntityTools.markdown_url_escape(entity['url'])
-          insertions[offset] = '[' + insertions[offset]
-          insertions[offset + length] = "](#{url})" + insertions[offset + length]
-        when 'custom_emoji'
-          insertions[offset] = '![' + insertions[offset]
-          insertions[offset + length] = "](tg://emoji?id=#{entity['custom_emoji_id']})" + insertions[offset + length]
-        end
-      end
-
-      # Build markdown string
-      result = ''
-      pos = 0
-      insertions.sort.each do |ins_offset, insertion|
-        # Escape text between positions
-        text_segment = EntityTools.mb_substr(@message, pos, ins_offset - pos)
-        result += escape_text_for_markdown(text_segment, pos, insertions)
-        result += insertion
-        pos = ins_offset
-      end
-      result += escape_text_for_markdown(EntityTools.mb_substr(@message, pos), pos, insertions)
-      result
     end
 
     private
@@ -398,7 +361,6 @@ module TgEntity
       entity = case node.name
                when 's', 'strike', 'del' then { 'type' => 'strikethrough' }
                when 'u' then { 'type' => 'underline' }
-               when 'blockquote' then { 'type' => 'block_quote' }
                when 'b', 'strong' then { 'type' => 'bold' }
                when 'i', 'em' then { 'type' => 'italic' }
                when 'code' then { 'type' => 'code' }
@@ -410,8 +372,24 @@ module TgEntity
                    { 'type' => 'pre' }
                  end
                when 'span'
-                 if node['class'] == 'tg-spoiler'
+                 case node['class']
+                 when 'tg-spoiler'
                    { 'type' => 'spoiler' }
+                 when 'tg-hashtag'
+                   { 'type' => 'hashtag' }
+                 when 'tg-cashtag'
+                   { 'type' => 'cashtag' }
+                 when 'tg-bot-command'
+                   { 'type' => 'bot_command' }
+                 when 'tg-media-timestamp'
+                   media_timestamp = node['timestamp'] || node['data-timestamp']
+                   if media_timestamp
+                     { 'type' => 'media_timestamp', 'media_timestamp' => media_timestamp.to_i }
+                   else
+                     { 'type' => 'media_timestamp' }
+                   end
+                 when 'tg-bank-card-number'
+                   { 'type' => 'bank_card_number' }
                  else
                    nil
                  end
@@ -419,6 +397,28 @@ module TgEntity
                  { 'type' => 'custom_emoji', 'custom_emoji_id' => node['emoji-id'].to_i }
                when 'emoji'
                  { 'type' => 'custom_emoji', 'custom_emoji_id' => node['id'].to_i }
+               when 'tg-hashtag'
+                 { 'type' => 'hashtag' }
+               when 'tg-cashtag'
+                 { 'type' => 'cashtag' }
+               when 'tg-bot-command'
+                 { 'type' => 'bot_command' }
+               when 'tg-media-timestamp'
+                 media_timestamp = node['timestamp'] || node['data-timestamp']
+                 if media_timestamp
+                   { 'type' => 'media_timestamp', 'media_timestamp' => media_timestamp.to_i }
+                 else
+                   { 'type' => 'media_timestamp' }
+                 end
+               when 'tg-bank-card-number'
+                 { 'type' => 'bank_card_number' }
+               when 'blockquote'
+                 # Check for expandable attribute or class
+                 if !node['expandable'].nil? || node['class'] == 'expandable'
+                   { 'type' => 'expandable_block_quote' }
+                 else
+                   { 'type' => 'block_quote' }
+                 end
                when 'a'
                  handle_link(node['href'] || '')
                else
@@ -461,15 +461,6 @@ module TgEntity
       else
         { 'type' => 'text_link', 'url' => href }
       end
-    end
-
-    # Escape text for markdown
-    # We need to escape special characters that are not part of entities
-    def escape_text_for_markdown(text, current_offset, insertions)
-      # For now, escape all special characters
-      # In a more sophisticated implementation, we'd track which characters
-      # are already part of entity markers
-      EntityTools.markdown_escape(text)
     end
   end
 end

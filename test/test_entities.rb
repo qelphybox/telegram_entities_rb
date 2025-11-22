@@ -241,52 +241,126 @@ class TestEntities < Minitest::Test
     assert_equal '&lt;b&gt;test&lt;/b&gt;', entities.to_html
   end
 
-  def test_to_markdown_bold
-    entities = TgEntity::Entities.new('test', [{'type' => 'bold', 'offset' => 0, 'length' => 4}])
-    markdown = entities.to_markdown
-    assert_match(/\*test\*/, markdown)
+  def test_to_html_hashtag
+    entities = TgEntity::Entities.new('#test', [{'type' => 'hashtag', 'offset' => 0, 'length' => 5}])
+    assert_equal '<span class="tg-hashtag">#test</span>', entities.to_html
+    assert_equal '<tg-hashtag>#test</tg-hashtag>', entities.to_html(true)
   end
 
-  def test_to_markdown_italic
-    entities = TgEntity::Entities.new('test', [{'type' => 'italic', 'offset' => 0, 'length' => 4}])
-    markdown = entities.to_markdown
-    assert_match(/_test_/, markdown)
+  def test_to_html_cashtag
+    entities = TgEntity::Entities.new('$USD', [{'type' => 'cashtag', 'offset' => 0, 'length' => 4}])
+    assert_equal '<span class="tg-cashtag">$USD</span>', entities.to_html
+    assert_equal '<tg-cashtag>$USD</tg-cashtag>', entities.to_html(true)
   end
 
-  def test_to_markdown_code
-    entities = TgEntity::Entities.new('test', [{'type' => 'code', 'offset' => 0, 'length' => 4}])
-    markdown = entities.to_markdown
-    assert_match(/`test`/, markdown)
+  def test_to_html_bot_command
+    entities = TgEntity::Entities.new('/start', [{'type' => 'bot_command', 'offset' => 0, 'length' => 6}])
+    assert_equal '<span class="tg-bot-command">/start</span>', entities.to_html
+    assert_equal '<tg-bot-command>/start</tg-bot-command>', entities.to_html(true)
   end
 
-  def test_to_markdown_pre
-    entities = TgEntity::Entities.new('test', [{'type' => 'pre', 'offset' => 0, 'length' => 4, 'language' => 'php'}])
-    markdown = entities.to_markdown
-    assert_match(/```php/, markdown)
-    assert_match(/test/, markdown)
-    assert_match(/```/, markdown)
+  def test_to_html_media_timestamp
+    entities = TgEntity::Entities.new('0:30', [{'type' => 'media_timestamp', 'offset' => 0, 'length' => 4, 'media_timestamp' => 30}])
+    assert_equal '<span class="tg-media-timestamp">0:30</span>', entities.to_html
+    assert_equal '<tg-media-timestamp timestamp="30">0:30</tg-media-timestamp>', entities.to_html(true)
   end
 
-  def test_to_markdown_text_link
-    entities = TgEntity::Entities.new('text', [{'type' => 'text_link', 'offset' => 0, 'length' => 4, 'url' => 'https://example.com'}])
-    markdown = entities.to_markdown
-    assert_match(/\[text\]\(https:\/\/example\.com\)/, markdown)
+  def test_to_html_bank_card_number
+    entities = TgEntity::Entities.new('1234 5678 9012 3456', [{'type' => 'bank_card_number', 'offset' => 0, 'length' => 19}])
+    assert_equal '<span class="tg-bank-card-number">1234 5678 9012 3456</span>', entities.to_html
+    assert_equal '<tg-bank-card-number>1234 5678 9012 3456</tg-bank-card-number>', entities.to_html(true)
   end
 
-  def test_to_markdown_custom_emoji
-    entities = TgEntity::Entities.new('text', [{'type' => 'custom_emoji', 'offset' => 0, 'length' => 4, 'custom_emoji_id' => 12345}])
-    markdown = entities.to_markdown
-    assert_match(/!\[text\]\(tg:\/\/emoji\?id=12345\)/, markdown)
+  def test_to_html_expandable_block_quote
+    entities = TgEntity::Entities.new('quote', [{'type' => 'expandable_block_quote', 'offset' => 0, 'length' => 5}])
+    assert_equal '<blockquote class="expandable">quote</blockquote>', entities.to_html
+    assert_equal '<blockquote expandable>quote</blockquote>', entities.to_html(true)
   end
 
-  def test_to_markdown_nested
-    entities = TgEntity::Entities.new('test', [
-      {'type' => 'italic', 'offset' => 0, 'length' => 4},
-      {'type' => 'bold', 'offset' => 0, 'length' => 4}
-    ])
-    markdown = entities.to_markdown
-    assert_match(/\*/, markdown)
-    assert_match(/_/, markdown)
+  def test_from_html_hashtag
+    entities = TgEntity::Entities.from_html('<tg-hashtag>#test</tg-hashtag>')
+    assert_equal '#test', entities.message
+    assert_equal 1, entities.entities.length
+    assert_equal 'hashtag', entities.entities[0]['type']
+  end
+
+  def test_from_html_hashtag_span
+    entities = TgEntity::Entities.from_html('<span class="tg-hashtag">#test</span>')
+    assert_equal '#test', entities.message
+    assert_equal 1, entities.entities.length
+    assert_equal 'hashtag', entities.entities[0]['type']
+  end
+
+  def test_from_html_cashtag
+    entities = TgEntity::Entities.from_html('<tg-cashtag>$USD</tg-cashtag>')
+    assert_equal '$USD', entities.message
+    assert_equal 1, entities.entities.length
+    assert_equal 'cashtag', entities.entities[0]['type']
+  end
+
+  def test_from_html_cashtag_span
+    entities = TgEntity::Entities.from_html('<span class="tg-cashtag">$USD</span>')
+    assert_equal '$USD', entities.message
+    assert_equal 1, entities.entities.length
+    assert_equal 'cashtag', entities.entities[0]['type']
+  end
+
+  def test_from_html_bot_command
+    entities = TgEntity::Entities.from_html('<tg-bot-command>/start</tg-bot-command>')
+    assert_equal '/start', entities.message
+    assert_equal 1, entities.entities.length
+    assert_equal 'bot_command', entities.entities[0]['type']
+  end
+
+  def test_from_html_bot_command_span
+    entities = TgEntity::Entities.from_html('<span class="tg-bot-command">/start</span>')
+    assert_equal '/start', entities.message
+    assert_equal 1, entities.entities.length
+    assert_equal 'bot_command', entities.entities[0]['type']
+  end
+
+  def test_from_html_media_timestamp
+    entities = TgEntity::Entities.from_html('<tg-media-timestamp timestamp="30">0:30</tg-media-timestamp>')
+    assert_equal '0:30', entities.message
+    assert_equal 1, entities.entities.length
+    assert_equal 'media_timestamp', entities.entities[0]['type']
+    assert_equal 30, entities.entities[0]['media_timestamp']
+  end
+
+  def test_from_html_media_timestamp_span
+    entities = TgEntity::Entities.from_html('<span class="tg-media-timestamp" data-timestamp="30">0:30</span>')
+    assert_equal '0:30', entities.message
+    assert_equal 1, entities.entities.length
+    assert_equal 'media_timestamp', entities.entities[0]['type']
+    assert_equal 30, entities.entities[0]['media_timestamp']
+  end
+
+  def test_from_html_bank_card_number
+    entities = TgEntity::Entities.from_html('<tg-bank-card-number>1234 5678 9012 3456</tg-bank-card-number>')
+    assert_equal '1234 5678 9012 3456', entities.message
+    assert_equal 1, entities.entities.length
+    assert_equal 'bank_card_number', entities.entities[0]['type']
+  end
+
+  def test_from_html_bank_card_number_span
+    entities = TgEntity::Entities.from_html('<span class="tg-bank-card-number">1234 5678 9012 3456</span>')
+    assert_equal '1234 5678 9012 3456', entities.message
+    assert_equal 1, entities.entities.length
+    assert_equal 'bank_card_number', entities.entities[0]['type']
+  end
+
+  def test_from_html_expandable_block_quote
+    entities = TgEntity::Entities.from_html('<blockquote expandable>quote</blockquote>')
+    assert_equal 'quote', entities.message
+    assert_equal 1, entities.entities.length
+    assert_equal 'expandable_block_quote', entities.entities[0]['type']
+  end
+
+  def test_from_html_expandable_block_quote_class
+    entities = TgEntity::Entities.from_html('<blockquote class="expandable">quote</blockquote>')
+    assert_equal 'quote', entities.message
+    assert_equal 1, entities.entities.length
+    assert_equal 'expandable_block_quote', entities.entities[0]['type']
   end
 
   def test_utf16_emoji
@@ -312,14 +386,6 @@ class TestEntities < Minitest::Test
     entities2 = TgEntity::Entities.from_html(html)
     assert_equal entities.message, entities2.message
     # Entities might be slightly different due to whitespace trimming, but message should match
-  end
-
-  def test_round_trip_html_markdown
-    original = '<b>bold <i>italic</i> bold</b>'
-    entities = TgEntity::Entities.from_html(original)
-    markdown = entities.to_markdown
-    entities2 = TgEntity::Entities.from_markdown(markdown)
-    assert_equal entities.message, entities2.message
   end
 
   def test_real_example
