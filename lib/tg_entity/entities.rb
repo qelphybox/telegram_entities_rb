@@ -256,7 +256,7 @@ module TgEntity
         insertions[offset] ||= ''
 
         insertions[offset] += case entity['type']
-                              when 'bold' then '<b>'
+                              when 'bold' then '<strong>'
                               when 'italic' then '<i>'
                               when 'code' then '<code>'
                               when 'pre'
@@ -310,7 +310,7 @@ module TgEntity
         end_offset = offset + length
         insertions[end_offset] ||= ''
         insertions[end_offset] = case entity['type']
-                                  when 'bold' then '</b>'
+                                  when 'bold' then '</strong>'
                                   when 'italic' then '</i>'
                                   when 'code' then '</code>'
                                   when 'pre' then '</pre>'

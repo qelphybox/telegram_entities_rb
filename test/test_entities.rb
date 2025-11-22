@@ -191,7 +191,7 @@ class TestEntities < Minitest::Test
 
   def test_to_html_bold
     entities = TgEntity::Entities.new('test', [{'type' => 'bold', 'offset' => 0, 'length' => 4}])
-    assert_equal '<b>test</b>', entities.to_html
+    assert_equal '<strong>test</strong>', entities.to_html
   end
 
   def test_to_html_italic
@@ -232,7 +232,7 @@ class TestEntities < Minitest::Test
       {'type' => 'bold', 'offset' => 0, 'length' => 4}
     ])
     html = entities.to_html
-    assert_match(/<b>/, html)
+    assert_match(/<strong>/, html)
     assert_match(/<i>/, html)
   end
 
