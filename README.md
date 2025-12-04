@@ -126,6 +126,33 @@ puts html
 # => "<strong>Hello</strong> <em>world</em>"
 ```
 
+### Converting Entities to Telegram Bot API HTML Format
+
+For sending messages via Telegram Bot API with `parse_mode: 'HTML'`, use `to_bot_html`:
+
+> 📖 See [Telegram Bot API HTML Style documentation](https://core.telegram.org/bots/api#html-style) for complete formatting rules.
+
+```ruby
+entities = TelegramEntities.new('Check #hashtag and /start command', [
+  {'type' => 'hashtag', 'offset' => 6, 'length' => 8},
+  {'type' => 'bot_command', 'offset' => 19, 'length' => 7}
+])
+
+html = entities.to_bot_html
+puts html
+# => "Check #hashtag and /start command"
+# Note: hashtags and bot commands are sent without wrappers (automatically processed by Telegram)
+
+# Use in Telegram Bot API
+# bot.send_message(chat_id: chat_id, text: html, parse_mode: 'HTML')
+```
+
+The `to_bot_html` method:
+- Replaces `<br>` tags with `\n`
+- Removes wrappers for hashtags, cashtags, bot commands, media timestamps, and bank card numbers
+- Keeps `tg-spoiler` and `tg-emoji` tags as-is
+- Properly escapes HTML symbols (`<`, `>`, `&`, `"`)
+
 ### Telegram-Specific Tags
 
 When sending HTML to Telegram Bot API, use `allow_telegram_tags: true` to get Telegram-compatible tags. This is especially important for special entity types like spoilers, custom emojis, and cashtags:
@@ -163,6 +190,7 @@ puts html_telegram
 **When to use each mode:**
 - **Standard HTML** (`allow_telegram_tags: false`): For displaying in web browsers or general HTML rendering
 - **Telegram Tags** (`allow_telegram_tags: true`): For sending messages via Telegram Bot API using `parse_mode: 'HTML'`
+- **`to_bot_html`**: Recommended method for Telegram Bot API - automatically formats HTML according to Telegram's requirements (removes auto-processed entity wrappers, replaces `<br>` with `\n`, etc.)
 
 ### Real-World Example
 
