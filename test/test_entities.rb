@@ -394,4 +394,136 @@ class TestEntities < Minitest::Test
     entities = TelegramEntities.new(input_data[0], input_data[1])
     assert_equal expected_html, entities.to_html
   end
+
+  def test_to_bot_html_hashtag
+    entities = TelegramEntities.new("#test", [{"type" => "hashtag", "offset" => 0, "length" => 5}])
+    # Hashtags should be sent without wrapper (automatically processed by bot)
+    assert_equal "#test", entities.to_bot_html
+  end
+
+  def test_to_bot_html_cashtag
+    entities = TelegramEntities.new("$USD", [{"type" => "cashtag", "offset" => 0, "length" => 4}])
+    # Cashtags should be sent without wrapper (automatically processed by bot)
+    assert_equal "$USD", entities.to_bot_html
+  end
+
+  def test_to_bot_html_bot_command
+    entities = TelegramEntities.new("/start", [{"type" => "bot_command", "offset" => 0, "length" => 6}])
+    # Bot commands should be sent without wrapper (automatically processed by bot)
+    assert_equal "/start", entities.to_bot_html
+  end
+
+  def test_to_bot_html_media_timestamp
+    entities = TelegramEntities.new("0:30", [{"type" => "media_timestamp", "offset" => 0, "length" => 4, "media_timestamp" => 30}])
+    # Media timestamps should be sent without wrapper (automatically processed by bot)
+    assert_equal "0:30", entities.to_bot_html
+  end
+
+  def test_to_bot_html_bank_card
+    entities = TelegramEntities.new("1234 5678 9012 3456", [{"type" => "bank_card", "offset" => 0, "length" => 19}])
+    # Bank card numbers should be sent without wrapper (automatically processed by bot)
+    assert_equal "1234 5678 9012 3456", entities.to_bot_html
+  end
+
+  def test_to_bot_html_spoiler
+    entities = TelegramEntities.new("spoiler text", [{"type" => "spoiler", "offset" => 0, "length" => 13}])
+    # Spoilers should keep tg-spoiler tags
+    assert_equal "<tg-spoiler>spoiler text</tg-spoiler>", entities.to_bot_html
+  end
+
+  def test_to_bot_html_custom_emoji
+    entities = TelegramEntities.new("😀", [{"type" => "custom_emoji", "offset" => 0, "length" => 2, "custom_emoji_id" => 12345}])
+    # Custom emojis should keep tg-emoji tags
+    assert_equal '<tg-emoji emoji-id="12345">😀</tg-emoji>', entities.to_bot_html
+  end
+
+  def test_to_bot_html_br_replacement
+    entities = TelegramEntities.new("Line 1\nLine 2", [])
+    html = entities.to_html(true)
+    # to_html converts \n to <br>
+    assert_match(/<br>/, html)
+    # to_bot_html should convert <br> back to \n
+    bot_html = entities.to_bot_html
+    assert_match(/\n/, bot_html)
+    refute_match(/<br/, bot_html)
+  end
+
+  def test_to_bot_html_mixed_content
+    entities = TelegramEntities.new("Check #hashtag and /start command", [
+      {"type" => "hashtag", "offset" => 6, "length" => 8},
+      {"type" => "bot_command", "offset" => 19, "length" => 7}
+    ])
+    # Both hashtag and bot_command should be without wrappers
+    result = entities.to_bot_html
+    assert_equal "Check #hashtag and /start command", result
+    refute_match(/<tg-hashtag>/, result)
+    refute_match(/<tg-bot-command>/, result)
+  end
+
+  def test_to_bot_html_escapes_special_characters
+    # Test that <, >, &, " are properly escaped
+    entities = TelegramEntities.new('Text with < > & " symbols', [])
+    result = entities.to_bot_html
+    assert_match(/&lt;/, result)
+    assert_match(/&gt;/, result)
+    assert_match(/&amp;/, result)
+    assert_match(/&quot;/, result)
+    # Check that there are no unescaped <, >, &, " symbols (except in HTML entities)
+    # Remove all HTML entities and check that no raw symbols remain
+    without_entities = result.gsub(/&(?:lt|gt|amp|quot|#\d+);/, '')
+    refute_match(/</, without_entities, "Should not contain unescaped <")
+    refute_match(/>/, without_entities, "Should not contain unescaped >")
+    refute_match(/&/, without_entities, "Should not contain unescaped &")
+    refute_match(/"/, without_entities, "Should not contain unescaped \"")
+  end
+
+  def test_to_bot_html_supports_named_entities
+    # Test that named HTML entities are supported when parsing HTML
+    entities = TelegramEntities.from_html('Text with &lt; &gt; &amp; &quot; entities')
+    result = entities.to_bot_html
+    # Nokogiri decodes entities, so they should be re-escaped in output
+    assert_match(/&lt;/, result)
+    assert_match(/&gt;/, result)
+    assert_match(/&amp;/, result)
+    assert_match(/&quot;/, result)
+  end
+
+  def test_to_bot_html_supports_numeric_entities
+    # Test that numeric HTML entities are supported when parsing HTML
+    entities = TelegramEntities.from_html('Text with &#60; &#62; &#38; &#34; entities')
+    result = entities.to_bot_html
+    # Nokogiri decodes numeric entities, so they should be re-escaped in output
+    assert_match(/&lt;/, result)
+    assert_match(/&gt;/, result)
+    assert_match(/&amp;/, result)
+    assert_match(/&quot;/, result)
+  end
+
+  def test_to_bot_html_escapes_in_attributes
+    # Test that attributes are properly escaped
+    entities = TelegramEntities.new("test", [{
+      "type" => "text_url",
+      "offset" => 0,
+      "length" => 4,
+      "url" => 'https://example.com?q=test&param=value'
+    }])
+    result = entities.to_bot_html
+    # URL should be properly escaped in href attribute
+    assert_match(/&amp;/, result)
+    assert_match(/href=/, result)
+  end
+
+  def test_to_bot_html_escapes_in_code_blocks
+    # Test that code blocks properly escape HTML
+    entities = TelegramEntities.new('if (x < 5 && y > 10) {', [{
+      "type" => "code",
+      "offset" => 0,
+      "length" => 25
+    }])
+    result = entities.to_bot_html
+    # Code content should be properly escaped
+    assert_match(/&lt;/, result)
+    assert_match(/&gt;/, result)
+    assert_match(/&amp;/, result)
+  end
 end

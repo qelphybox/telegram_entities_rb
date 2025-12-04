@@ -2,6 +2,7 @@
 
 require_relative "telegram_entities/version"
 require_relative "telegram_entities/entity_tools"
+require_relative "telegram_entities/tg_bot_html_parse_mode_format"
 require_relative "telegram_entities/entities"
 require_relative "telegram_entities/tdlib_converter"
 
