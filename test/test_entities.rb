@@ -470,7 +470,7 @@ class TestEntities < Minitest::Test
     assert_match(/&quot;/, result)
     # Check that there are no unescaped <, >, &, " symbols (except in HTML entities)
     # Remove all HTML entities and check that no raw symbols remain
-    without_entities = result.gsub(/&(?:lt|gt|amp|quot|#\d+);/, '')
+    without_entities = result.gsub(/&(?:lt|gt|amp|quot|#\d+);/, "")
     refute_match(/</, without_entities, "Should not contain unescaped <")
     refute_match(/>/, without_entities, "Should not contain unescaped >")
     refute_match(/&/, without_entities, "Should not contain unescaped &")
@@ -479,7 +479,7 @@ class TestEntities < Minitest::Test
 
   def test_to_bot_html_supports_named_entities
     # Test that named HTML entities are supported when parsing HTML
-    entities = TelegramEntities.from_html('Text with &lt; &gt; &amp; &quot; entities')
+    entities = TelegramEntities.from_html("Text with &lt; &gt; &amp; &quot; entities")
     result = entities.to_bot_html
     # Nokogiri decodes entities, so they should be re-escaped in output
     assert_match(/&lt;/, result)
@@ -490,7 +490,7 @@ class TestEntities < Minitest::Test
 
   def test_to_bot_html_supports_numeric_entities
     # Test that numeric HTML entities are supported when parsing HTML
-    entities = TelegramEntities.from_html('Text with &#60; &#62; &#38; &#34; entities')
+    entities = TelegramEntities.from_html("Text with &#60; &#62; &#38; &#34; entities")
     result = entities.to_bot_html
     # Nokogiri decodes numeric entities, so they should be re-escaped in output
     assert_match(/&lt;/, result)
@@ -505,7 +505,7 @@ class TestEntities < Minitest::Test
       "type" => "text_url",
       "offset" => 0,
       "length" => 4,
-      "url" => 'https://example.com?q=test&param=value'
+      "url" => "https://example.com?q=test&param=value"
     }])
     result = entities.to_bot_html
     # URL should be properly escaped in href attribute
@@ -515,7 +515,7 @@ class TestEntities < Minitest::Test
 
   def test_to_bot_html_escapes_in_code_blocks
     # Test that code blocks properly escape HTML
-    entities = TelegramEntities.new('if (x < 5 && y > 10) {', [{
+    entities = TelegramEntities.new("if (x < 5 && y > 10) {", [{
       "type" => "code",
       "offset" => 0,
       "length" => 25

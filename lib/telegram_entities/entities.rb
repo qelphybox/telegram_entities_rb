@@ -6,6 +6,7 @@ module TelegramEntities
   # Class that represents a message + set of Telegram entities.
   class Entities
     include TgBotHtmlParseModeFormat
+
     attr_accessor :message, :entities
 
     # Creates an Entities container using a message and a list of entities.

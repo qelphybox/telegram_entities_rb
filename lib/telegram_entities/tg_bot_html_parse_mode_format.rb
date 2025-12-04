@@ -28,9 +28,7 @@ module TelegramEntities
       html = html.gsub(/<tg-cashtag>(.*?)<\/tg-cashtag>/i) { |_| $1 }
       html = html.gsub(/<tg-bot-command>(.*?)<\/tg-bot-command>/i) { |_| $1 }
       html = html.gsub(/<tg-media-timestamp[^>]*>(.*?)<\/tg-media-timestamp>/i) { |_| $1 }
-      html = html.gsub(/<tg-bank-card-number>(.*?)<\/tg-bank-card-number>/i) { |_| $1 }
-
-      html
+      html.gsub(/<tg-bank-card-number>(.*?)<\/tg-bank-card-number>/i) { |_| $1 }
     end
   end
 end
